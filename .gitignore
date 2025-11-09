@@ -1,0 +1,35 @@
+# Ignorer des dossiers
+node_modules/
+__pycache__/
+build/
+dist/
+
+# Ignorer des fichiers temporaires
+*.log
+*.tmp
+*.bak
+*.swp
+
+# Fichiers générés à ne pas versionner
+*.pdf
+*.csv
+*.xlsx
+*.zip
+*.tar.gz
+*.pkl
+*.h5
+*.npy
+*.txt
+
+# Ignorer des environnements virtuels
+.env
+.venv/
+venv/
+
+# Ignorer des fichiers système
+.DS_Store
+Thumbs.db
+
+# Ignorer des fichiers de configuration locales
+*.local
+*.secret.json
