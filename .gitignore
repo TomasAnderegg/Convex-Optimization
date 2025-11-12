@@ -20,6 +20,7 @@ dist/
 *.h5
 *.npy
 *.txt
+*.mat
 
 # Ignorer des environnements virtuels
 .env
