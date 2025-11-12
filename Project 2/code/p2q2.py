@@ -60,18 +60,17 @@ print(f"Objective*: {prob.value:.6f}  ||w||={np.linalg.norm(w_val):.4f}  b={b_va
 # Specifically, label will be a vector in R^((100^d) x 1)
 
 # +-----------------+
-
-# Déterminer les min et max de chaque feature
+'''
+    Donc si mon feature x_1 varie entre [-1,1] alors on voudra diviser cet intervalle en 100 points
+    et faire pareil pour x_2 ... x_d. Donc si on est en d = 2 on aura une grille de 100x100 points.
+'''
 x_min, x_max = x.min(axis=0), x.max(axis=0)
 
-# Créer 100 points uniformément espacés pour chaque dimension
 grids_1d = [np.linspace(x_min[j], x_max[j], 100) for j in range(d)]
 
-# Construire la grille complète (produit cartésien)
 meshes = np.meshgrid(*grids_1d, indexing='ij')
 feature = np.column_stack([m.ravel() for m in meshes])  # shape = (100**d, d)
 
-# Calculer les scores du modèle SVM
 w_val_flat = w_val.reshape(-1)    # s'assurer que w_val est un vecteur 1D
 b_val_scalar = float(b_val)       # convertir b_val en scalaire
 
