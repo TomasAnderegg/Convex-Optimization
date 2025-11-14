@@ -2,11 +2,18 @@
 import numpy as np
 import cvxpy as cp
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from scipy.io import loadmat
 
+mpl.rcParams.update({
+    "text.usetex": True,
+    "font.family": "serif",
+    "font.serif": ["Computer Modern Roman"],
+    "axes.unicode_minus": False 
+    })
+
 # ------------------- Load data -------------------
-mat = loadmat(r'C:\Users\tjga9\Documents\Tomas\EPFL\MA3\Convex\Project 2\code\p2data1.mat')
-# mat = loadmat('p2data2.mat') #uncomment to solve for the second data set
+mat = loadmat("Project_2/p2data1.mat")
 
 x = np.asarray(mat['x'], dtype=float)
 y = np.asarray(mat['y'], dtype=float).reshape(-1)
@@ -109,11 +116,15 @@ train_red  = (y >= 1)
 train_blue = ~train_red
 plt.scatter(x[train_blue, 0], x[train_blue, 1],
             s=35, c=[[0, 0, 1, 1.0]], marker='o', edgecolors='none',
-            zorder=5)
+            zorder=5, label='Class +1')
 plt.scatter(x[train_red, 0], x[train_red, 1],
             s=35, c=[[1, 0, 0, 1.0]], marker='o', edgecolors='none',
-            zorder=6)
- 
+            zorder=6, label='Class -1')
+        
+plt.xlabel(r'$x_1$', fontsize=14)
+plt.ylabel(r'$x_2$', fontsize=14)
+plt.legend(fontsize=14)
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
+plt.savefig('Project_2/svm_smooth_hinge_p2data1.png', dpi=300)
 plt.show()
