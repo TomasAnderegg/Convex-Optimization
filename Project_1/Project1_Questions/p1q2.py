@@ -24,35 +24,7 @@ M = 1 / m * (docs @ docs.T)           # second-order moment
 rho = 0.005
 
 # +------------------+
-r = cp.Variable((n, 1))
-theta = cp.Variable((n, n), symmetric=True, PSD=True)
-epsilon = 0.01  # small regularization to ensure PD
-A_barre = x = cp.Variable(1)
-A_barre = n/2*np.log(np.e * np.pi / 2) - (1/2)*(n-1) - (1/2)*(cp.Maximize(cp.sum(epsilon)) + cp.log_det(-theta + epsilon*np.eye(n)))
-objective = cp.Minimize(
-    - cp.sum(cp.multiply(mu, cp.diag(theta)))       # linear term
-    - cp.sum(cp.multiply(M, theta))                # linear term for off-diagonals
-    + rho * cp.norm(theta - cp.diag(cp.diag(theta)), 1)   # L1 penalty off-diag
-    - cp.log_det(-theta + epsilon*np.eye(n))      # surrogate convex term
-)
-
-
-constraints = [
-    -theta + epsilon*np.eye(n) >> 0,
-    epsilon >= r
-]
-
-prob = cp.Problem(objective, constraints)
-prob.solve(solver=cp.MOSEK)
-# theta = theta.value.copy()
-prob.solve(solver=cp.MOSEK)
-
-if theta.value is None:
-    raise ValueError("Le problème n'a pas été résolu correctement. Vérifiez les contraintes ou le solver.")
-
-prob = cp.Problem(cp.Minimize(objective), constraints)
-prob.solve(solver=cp.MOSEK, verbose=True)
-theta = theta.value.copy()
+# |  Your Code HERE  |
 # +------------------+
 
 # fix the adjacency matrix
