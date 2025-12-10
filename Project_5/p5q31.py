@@ -23,6 +23,10 @@ Hint: Use cp.log_det for the objective.
 """
 # YOUR CODE HERE
 
+# ========================= #
+#          UTILS            #
+# ========================= #
+
 import matplotlib as mpl
 import os
 import pickle
@@ -35,7 +39,7 @@ mpl.rcParams.update({
     })
 
 def create_plots(problem, results, L):
-    os.makedirs(f"Q3_1/Problem_{problem}", exist_ok=True)
+    os.makedirs(f"Project_5/Q3_1/Problem_{problem}", exist_ok=True)
     pi, runtime, support = results
     fig, ax = plt.subplots(figsize=(8,5))
     ax.bar(range(L), pi)
@@ -49,7 +53,7 @@ def create_plots(problem, results, L):
             multialignment='left')
     
     plt.tight_layout(rect=[0,0,1,0.95])
-    plt.savefig(f"Q3_1/Problem_{problem}/L_{L}.png", dpi=300)
+    plt.savefig(f"Project_5/Q3_1/Problem_{problem}/L_{L}.png", dpi=300)
 
 def save_results(results, filename="results_q31.pkl"):
     with open(filename, "wb") as f:
@@ -58,6 +62,20 @@ def save_results(results, filename="results_q31.pkl"):
 def load_results(filename="results_q31.pkl"):
     with open(filename, "rb") as f:
         return pickle.load(f)
+
+def create_histogram(results, problem, L, bins=30, title="Histogram of pi values"):
+    pi, runtime, support = results
+    plt.figure(figsize=(8, 5))
+    plt.hist(pi, bins=bins, edgecolor="black")
+    plt.xlabel(r"$\pi_i$")
+    plt.ylabel("Frequency")
+    plt.title(title)
+    plt.grid(alpha=0.3)
+    plt.savefig(f"Project_5/Q3_1/Histograms/{problem}_{L}.png", dpi=300)
+
+# ========================= #
+#          D-OPT            #
+# ========================= #
 
 def problem_d(A_all, d, K, n_repeats, L):
     L_max, _, _ = A_all.shape # = (400, 5, 2) which are L, d, K
@@ -91,6 +109,10 @@ def problem_d(A_all, d, K, n_repeats, L):
 # results = load_results()
 # for L in L_list:
 #     create_plots("D", results["D"][L], L)
+
+# results = load_results()
+# for L in L_list:
+#     create_histogram(results["D"][L], "D", L)
 
 # --------------------------------------------------------
 # G-optimal (CVXPY)
@@ -150,6 +172,10 @@ def problem_g(A_all, d, k, n_repeats, L):
 # for L in L_list:
 #     create_plots("G", results["G"][L], L)
 
+# results = load_results()
+# for L in L_list:
+#     create_histogram(results["G"][L], "G", L, bins=50)
+
 
 # -------------------------------------------------
 # Frank–Wolfe for D-opt
@@ -174,7 +200,9 @@ def problem_fw(A_all, d, k, n_repeats, epsilon, T, L):
         for t in range(T+1):
             V = 0
             for i in range(L):
+                # print((A_all[i] @ A_all[i].T).shape)
                 V += pi[i]*(A_all[i]@A_all[i].T)
+            V += 1e-8 * np.eye(d)
             V_inv = np.linalg.inv(V)
             traces = np.zeros(L) # we want to compare L traces
             for i in range(L):
@@ -195,18 +223,22 @@ def problem_fw(A_all, d, k, n_repeats, epsilon, T, L):
     results = (pi_mean, runtimes_mean, support) # stored in the dict with key L
     return results
 
-results = load_results()
-results.setdefault("FW", {})
-for L in L_list:
-    results["FW"][L] = problem_fw(A_all, d, K, n_repeats, epsilon, T, L)
-    save_results(results)
+# results = load_results()
+# results.setdefault("FW", {})
+# for L in L_list:
+#     results["FW"][L] = problem_fw(A_all, d, K, n_repeats, epsilon, T, L)
+#     save_results(results)
 
-results = load_results()
-for L in L_list:
-    create_plots("FW", results["FW"][L], L)
+# results = load_results()
+# for L in L_list:
+#     create_plots("FW", results["FW"][L], L)
+
+# results = load_results()
+# for L in L_list:
+#     create_histogram(results["FW"][L], "FW", L, bins=50)
 
 
-def compare_algos(results, L_list, save_dir="Q3_1/Comparison"):
+def compare_algos(results, L_list, save_dir="Project_5/Q3_1/Comparison"):
     os.makedirs(save_dir, exist_ok=True)
     algos = ["D", "G", "FW"]
     colors = {"D": "tab:blue", "G": "tab:orange", "FW": "tab:green"}
@@ -228,5 +260,5 @@ def compare_algos(results, L_list, save_dir="Q3_1/Comparison"):
         plt.tight_layout()
         plt.savefig(f"{save_dir}/Comparison_L_{L}.png", dpi=300)
 
-# results = load_results()
-# compare_algos(results, L_list)
+results = load_results()
+compare_algos(results, L_list)
