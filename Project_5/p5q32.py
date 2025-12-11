@@ -15,7 +15,6 @@ S = [Ai @ Ai.T for Ai in A]
 # ------------------------------------
 # Frank–Wolfe for D-opt
 # ------------------------------------
-# YOUR CODE HERE
 
 # Part 1 : compute pi_star
 def problem_fw(d, epsilon, T, L):
@@ -43,7 +42,7 @@ epsilon = 1e-3
 T = 1000
 
 pi_star = problem_fw(d, epsilon, T, L)
-np.save('pi_star.npy', pi_star)
+np.save('pi_star_example_3.npy', pi_star)
 
 # Part 2 : compute s_i and check that all prompts i s.t. pi_star[i] > 1e-4 have s_i approx. equal to d
 # pi_star = np.load("pi_star.npy")
@@ -88,4 +87,4 @@ plt.ylabel("PC2")
 plt.tight_layout()
 plt.show()
 
-plt.savefig("p5q32.png")
+plt.savefig("PCA_top_25_example3.png")
