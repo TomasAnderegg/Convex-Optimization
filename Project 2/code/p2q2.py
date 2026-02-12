@@ -5,12 +5,13 @@ import matplotlib.pyplot as plt
 from scipy.io import loadmat
 
 # ------------------- Load data -------------------
-mat = loadmat(r'C:\Users\tjga9\Documents\Tomas\EPFL\MA3\Convex\Project 2\code\p2data1.mat')
-# mat = loadmat(r'C:\Users\tjga9\Documents\Tomas\EPFL\MA3\Convex\Project 2\code\p2data2.mat') #uncomment to solve for the second data set
+# mat = loadmat(r'C:\Users\tjga9\Documents\Tomas\EPFL\MA3\Convex\Project 2\code\p2data1.mat')
+mat = loadmat(r'C:\Users\tjga9\Documents\Tomas\EPFL\MA3\Convex\Project 2\code\p2data2.mat') #uncomment to solve for the second data set
 
 x = np.asarray(mat['x'], dtype=float)
 y = np.asarray(mat['y'], dtype=float).reshape(-1)
 m, d = x.shape
+print(d)
 
 # ------------------- Parameters -------------------
 rho = 1e-4  # regularization parameter
@@ -40,6 +41,7 @@ b_val = b.value
 # +-----------------+
 
 print(f"Objective*: {prob.value:.6f}  ||w||={np.linalg.norm(w_val):.4f}  b={b_val:.4f}")
+print("w =", w_val)
 
 # ------------------- Discretization & labels (100 points per feature) -------------------
 # Discretize each feature range to 100 discretization points to get 100^d

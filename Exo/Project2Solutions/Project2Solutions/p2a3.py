@@ -1,22 +1,11 @@
 # %%%%%%%%%%%%%%%%%%%%%% MGT-418 Convex Optimization %%%%%%%%%%%%%%%%%%%%%%%%
-
 import numpy as np
 import cvxpy as cp
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 from scipy.io import loadmat
 
-# mpl.rcParams.update({
-#     "text.usetex": True,
-#     "font.family": "serif",
-#     "font.serif": ["Computer Modern Roman"],
-#     "axes.unicode_minus": False 
-#     })
-
 # ------------------- Load data -------------------
-# mat = loadmat("Project_2/p2data1.mat")
-mat = loadmat(r'C:\Users\tjga9\Documents\Tomas\EPFL\MA3\Convex\Project 2\code\p2data2.mat')
-
+mat = loadmat("p2data2.mat")
 x = np.asarray(mat['x'], dtype=float)
 y = np.asarray(mat['y'], dtype=float).reshape(-1)
 m, d = x.shape
@@ -25,46 +14,53 @@ m, d = x.shape
 rho = 1e-4   # regularization parameter
 sigma = 3.0  # bandwidth of Gaussian kernel
 
-# Dual problem with Gaussian kernel
-# Solve the dual problem (4) with the Gaussian kernel 
-# Denote the dual decision variables by lambda
+# Decision variable
+lam = cp.Variable(m)
 
-# Gaussian kernel
+# Build kernel matrix
 K = np.zeros((m, m))
 for i in range(m):
     for j in range(m):
-        diff = x[i] - x[j]
-        K[i, j] = np.exp(-np.dot(diff, diff) / (2 * sigma**2))
+        diff = x[i, :] - x[j, :]
+        K[i, j] = np.exp(-np.dot(diff, diff) / (2.0 * sigma ** 2))
 
-# CVXPY variable
-lam = cp.Variable(m)
+z = cp.multiply(lam, y)
 
-# Dual objective
-quad_term = cp.sum(cp.multiply(y, lam)) 
-obj = cp.sum(lam - (m/2) * cp.square(lam)) \
-      - (1/(2*rho)) * cp.quad_form(cp.multiply(lam, y), cp.psd_wrap(K))
+# Objective:
+objective = (
+    cp.sum(lam)
+    - (m / 2.0) * cp.sum_squares(lam)
+    - (1.0 / (2.0 * rho)) * cp.quad_form(z, cp.psd_wrap(K))
+)
 
-# Constraints
+# Constraints:
 constraints = [
-    lam @ y == 0,
+    y @ lam == 0,
     lam >= 0,
-    lam <= 1/m
+    lam <= 1.0 / m
 ]
 
-dual_problem = cp.Problem(cp.Maximize(obj), constraints)
-dual_problem.solve(solver=cp.SCS, verbose=False)
+# Solve the dual (maximize objective)
+prob = cp.Problem(cp.Maximize(objective), constraints)
+prob.solve(solver=cp.SCS, verbose=False)
 
-lambda_opt = lam.value # this is an array
+if lam.value is None:
+    raise RuntimeError("Solver failed to find a solution.")
 
-# Compute optimal b (denote by b_opt) using the optimal dual solution
-sv_indices = np.where((lambda_opt > 0) & (lambda_opt < 1/m))[0]
-k = sv_indices[0] # pick the first k that satisfies the condition
+lambda_opt = lam.value  # numpy array of shape (m,)
 
-sum_term = 0
-for i in range(m):
-    sum_term += lambda_opt[i] * y[i] * K[i, k]
+b_opt = None
+for k in range(m):
+    if 0 < lambda_opt[k] < 1.0 / m:
+        # z = lambda .* y
+        z_vec = lambda_opt * y
+        b_opt = (m * lambda_opt[k] - 1.0) * y[k] + (1.0 / rho) * np.dot(
+            z_vec, K[:, k]
+        )
+        break
 
-b_opt = y[k] * (m * lambda_opt[k] - 1) + (1/rho) * sum_term
+if b_opt is None:
+    raise RuntimeError("No optimal b found. Daniel said this should never happen :)")
 
 # ------------------- Discretization & labels (100 points per feature) -------------------
 # Discretize each feature range to 100 discretization points to get 100^d
@@ -75,33 +71,43 @@ b_opt = y[k] * (m * lambda_opt[k] - 1) + (1/rho) * sum_term
 # Compute the label of each discrete point by using optimal w and b
 # Construct a label vector (denoted by label) containing the respective labels
 # Specifically, label will be a vector in R^((100^d) x 1)
-grid_points = 100
-x1_vals = np.linspace(np.min(x[:,0]), np.max(x[:,0]), grid_points)
-x2_vals = np.linspace(np.min(x[:,1]), np.max(x[:,1]), grid_points)
+x1_min, x1_max = x[:, 0].min(), x[:, 0].max()
+x2_min, x2_max = x[:, 1].min(), x[:, 1].max()
 
-feature = np.array([[a, b] for a in x1_vals for b in x2_vals])
+# 100 points in each direction
+grid_x1 = np.linspace(x1_min, x1_max, 100)
+grid_x2 = np.linspace(x2_min, x2_max, 100)
 
-# Compute decision value
-label = np.zeros(feature.shape[0])
+feature_list = []
+label_list = []
 
-for idx, z in enumerate(feature):
-    val = 0
-    for i in range(m):
-        diff = x[i] - z
-        Kiz = np.exp(-np.dot(diff, diff) / (2 * sigma**2))
-        val += lambda_opt[i] * y[i] * Kiz
-    label[idx] = (1/rho) * val - b_opt
+for v1 in grid_x1:
+    for v2 in grid_x2:
+        feat = np.array([v1, v2])
+        # Compute kernel(x_i, feat) for all i
+        diffs = x - feat
+        sq_norms = np.sum(diffs ** 2, axis=1)
+        k_vec = np.exp(-sq_norms / (2.0 * sigma ** 2))
 
-label = label.reshape(-1)
+        # w_temp(i) = lambda_i * y_i * K(x_i, feat)
+        w_temp = lambda_opt * y * k_vec
+        lbl = (1.0 / rho) * np.sum(w_temp) - b_opt
+
+        feature_list.append(feat)
+        label_list.append(lbl)
+
+feature = np.array(feature_list)  # shape (m_grid, 2)
+label = np.array(label_list)     # shape (m_grid,)
 
 # ------------------- Visualization -------------------
+# feel free to comment out and construct your own plots.
 m_light_red  = label >= 1
 m_dark_red   = (label >= 0) & (label < 1)
 m_dark_blue  = (label < 0)  & (label > -1)
 m_light_blue = label <= -1
 plt.figure(figsize=(7, 6))
 ax = plt.gca()
-ax.set_facecolor("white")
+ax.set_facecolor("white")  # improve contrast
  
 # plot light regions first (more transparent)
 plt.scatter(feature[m_light_blue, 0], feature[m_light_blue, 1],
@@ -124,15 +130,11 @@ train_red  = (y >= 1)
 train_blue = ~train_red
 plt.scatter(x[train_blue, 0], x[train_blue, 1],
             s=35, c=[[0, 0, 1, 1.0]], marker='o', edgecolors='none',
-            zorder=5, label='Class +1')
+            zorder=5)
 plt.scatter(x[train_red, 0], x[train_red, 1],
             s=35, c=[[1, 0, 0, 1.0]], marker='o', edgecolors='none',
-            zorder=6, label='Class -1')
+            zorder=6)
  
-plt.xlabel(r'$x_1$', fontsize=14)
-plt.ylabel(r'$x_2$', fontsize=14)
-plt.legend(fontsize=14)
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
-# plt.savefig('Project_2/svm_gaussian_kernel_p2data1.png', dpi=300)
 plt.show()
